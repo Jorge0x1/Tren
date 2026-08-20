@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>RailGuard | Centro de control</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+		:root {
+			--ink: #f3f6f4;
+			--muted: #91a09c;
+			--line: rgba(181, 204, 196, .14);
+			--panel: rgba(22, 31, 34, .88);
+			--panel-soft: #202b2d;
+			--page: #101719;
+			--teal: #4ed0bc;
+			--teal-dark: #173d3a;
+			--amber: #f5b85d;
+			--red: #f0786b;
+			--blue: #73aee8;
+			--shadow: 0 20px 50px rgba(0, 0, 0, .23);
+		}
+
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body {
+			min-height: 100vh; color: var(--ink); background: var(--page);
+			font-family: 'DM Sans', sans-serif; overflow-x: hidden;
+			background-image: linear-gradient(135deg, rgba(78, 208, 188, .06), transparent 35%), repeating-linear-gradient(115deg, transparent 0 80px, rgba(255,255,255,.018) 81px 82px);
+		}
+		button, select { font: inherit; }
+		button { cursor: pointer; }
+		.shell { display: grid; grid-template-columns: 238px 1fr; min-height: 100vh; }
+		.sidebar { padding: 28px 18px; border-right: 1px solid var(--line); background: rgba(12, 19, 21, .72); display: flex; flex-direction: column; }
+		.brand { display: flex; gap: 11px; align-items: center; margin: 0 10px 46px; font: 700 1.15rem 'Space Grotesk', sans-serif; letter-spacing: -.03em; }
+		.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: #102322; background: var(--teal); border-radius: 9px; font-weight: 700; }
+		.nav-label, .eyebrow, .kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .13em; font-size: .66rem; font-weight: 700; }
+		.nav-label { margin: 0 12px 13px; }
+		nav { display: grid; gap: 5px; }
+		.nav-item { border: 0; border-radius: 8px; padding: 12px; color: var(--muted); background: transparent; text-align: left; display: flex; gap: 12px; align-items: center; font-size: .86rem; }
+		.nav-item.active, .nav-item:hover { color: var(--ink); background: rgba(78, 208, 188, .11); }
+		.nav-icon { width: 18px; text-align: center; color: var(--teal); font-size: 1rem; }
+		.sidebar-foot { margin-top: auto; border-top: 1px solid var(--line); padding: 18px 10px 0; color: var(--muted); font-size: .75rem; line-height: 1.6; }
+		.user-switcher { position: relative; margin-top: 12px; } .user { display: flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 600; border: 0; width: 100%; padding: 0; background: transparent; text-align: left; } .user::after { content: '⌄'; margin-left: auto; color: var(--muted); font-size: 1rem; } .user:hover { color: var(--teal); }
+		.avatar { width: 28px; height: 28px; border-radius: 50%; background: #b5d7cc; color: #102322; display: grid; place-items: center; font-size: .7rem; }
+		.profile-menu { display: none; position: absolute; left: 0; right: 0; bottom: calc(100% + 10px); z-index: 8; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: #1a2527; box-shadow: 0 16px 30px rgba(0,0,0,.3); } .profile-menu.open { display: grid; gap: 3px; } .profile-option { display: grid; grid-template-columns: 28px 1fr; gap: 9px; align-items: center; border: 0; border-radius: 6px; padding: 8px; color: var(--muted); background: transparent; text-align: left; font-size: .74rem; } .profile-option:hover, .profile-option.active { color: var(--ink); background: rgba(78,208,188,.1); } .profile-option small { display: block; color: var(--muted); margin-top: 2px; font-size: .63rem; } .profile-option.active small { color: var(--teal); }
+		main { width: min(100%, 1440px); padding: 30px 42px 48px; margin: 0 auto; }
+		.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 26px; }
+		h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+		h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; letter-spacing: -.06em; margin: 7px 0 8px; }
+		.subhead { color: var(--muted); font-size: .9rem; }
+		.top-actions { display: flex; align-items: center; gap: 12px; }
+		.connection { color: var(--teal); border: 1px solid rgba(78,208,188,.24); background: rgba(78,208,188,.08); padding: 9px 12px; border-radius: 7px; font-size: .76rem; font-weight: 700; }
+		.primary { border: 0; background: var(--teal); color: #0b2421; border-radius: 7px; padding: 11px 15px; font-weight: 700; font-size: .78rem; }
+		.primary:hover { background: #78dfce; }
+		.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+		.stat { padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+		.stat-top { display: flex; justify-content: space-between; color: var(--muted); font-size: .76rem; }
+		.stat-icon { color: var(--teal); font-size: 1.05rem; }
+		.stat strong { display: block; font: 700 1.8rem 'Space Grotesk', sans-serif; margin-top: 12px; letter-spacing: -.05em; }
+		.stat small { color: var(--muted); font-size: .72rem; }
+		.layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .8fr); gap: 18px; }
+		.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+		.panel-head { padding: 19px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+		.panel-head h2 { font-size: 1rem; letter-spacing: -.02em; }
+		.panel-head span { color: var(--muted); font-size: .73rem; }
+		.map { position: relative; height: 310px; overflow: hidden; background-color: #162427; background-image: linear-gradient(rgba(125, 172, 163, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(125, 172, 163, .07) 1px, transparent 1px), radial-gradient(circle at 30% 25%, rgba(76, 134, 126, .16), transparent 30%); background-size: 42px 42px, 42px 42px, auto; }
+		.map::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(148deg, transparent 0 115px, rgba(189, 205, 196, .05) 116px 118px); pointer-events: none; }
+		.route { position: absolute; z-index: 1; left: 10%; top: 55%; width: 78%; height: 2px; background: linear-gradient(90deg, var(--teal), var(--teal) 58%, rgba(145,160,156,.28) 58%); transform: rotate(-17deg); box-shadow: 0 0 12px rgba(78, 208, 188, .42); }
+		.route::before { content: ''; position: absolute; inset: -5px 0; border-top: 1px dashed rgba(225,245,235,.26); }
+		.map-node { position: absolute; z-index: 2; display: grid; gap: 4px; font-size: .7rem; color: var(--muted); }
+		.map-node strong { color: var(--ink); font-size: .72rem; }
+		.node-dot { width: 11px; height: 11px; border: 3px solid var(--teal); border-radius: 50%; background: #162427; box-shadow: 0 0 0 5px rgba(78,208,188,.12); }
+		.origin { left: 9%; top: 63%; } .current { left: 51%; top: 39%; } .destination { right: 8%; top: 16%; }
+		.map-legend { position: absolute; z-index: 3; bottom: 15px; left: 18px; display: flex; gap: 14px; color: var(--muted); font-size: .69rem; }
+		.legend-item { display: flex; align-items: center; gap: 6px; } .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); } .legend-dot.gray { background: #72817e; }
+		.trip-meta { display: flex; gap: 22px; flex-wrap: wrap; padding: 15px 20px; color: var(--muted); font-size: .75rem; border-bottom: 1px solid var(--line); }
+		.trip-meta strong { display: block; color: var(--ink); font-size: .84rem; margin-top: 3px; }
+		.route-controls { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+		.route-control { border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; color: var(--muted); background: rgba(255,255,255,.025); font-size: .72rem; font-weight: 700; white-space: nowrap; }
+		.route-control:hover { color: var(--ink); border-color: var(--teal); background: rgba(78,208,188,.08); }
+		.route-control.active { color: var(--teal); border-color: var(--teal); background: rgba(78,208,188,.1); }
+		.table-tools { padding: 14px 20px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+		.filters { display: flex; gap: 7px; flex-wrap: wrap; } .filter { padding: 7px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: .72rem; } .filter.active, .filter:hover { color: var(--ink); border-color: var(--teal); }
+		.search { width: 180px; border: 1px solid var(--line); background: #182224; color: var(--ink); padding: 8px 10px; border-radius: 6px; outline: 0; font-size: .74rem; }
+		.wagon-list { display: grid; max-height: 370px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--teal) #263536; scrollbar-width: thin; }
+		.wagon-list::-webkit-scrollbar { width: 7px; }
+		.wagon-list::-webkit-scrollbar-track { background: #263536; }
+		.wagon-list::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 8px; }
+		.wagon { display: grid; grid-template-columns: 1.3fr .85fr .72fr .72fr .75fr auto; gap: 12px; align-items: center; padding: 15px 20px; border-top: 1px solid var(--line); font-size: .78rem; }
+		.wagon:hover { background: rgba(78,208,188,.045); }
+		.wagon-id { font-weight: 700; color: var(--ink); } .wagon-id small { display: block; color: var(--muted); font-weight: 400; margin-top: 4px; }
+		.cell-label { display: none; color: var(--muted); font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; }
+		.status { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--teal); } .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; } .status.warn { color: var(--amber); } .status.danger { color: var(--red); } .status.offline { color: #8b9895; }
+		.battery { color: var(--muted); } .battery strong { color: var(--ink); } .battery-bar { width: 52px; height: 4px; background: #344141; display: inline-block; border-radius: 5px; margin-right: 5px; vertical-align: middle; } .battery-bar i { display: block; height: 100%; background: var(--teal); border-radius: inherit; } .battery.low i { background: var(--amber); }
+		.row-action { border: 0; background: transparent; color: var(--teal); font-size: .72rem; font-weight: 700; }
+		.side-stack { display: grid; gap: 18px; align-content: start; }
+		.alerts { padding: 6px 20px 10px; } .alert { display: grid; grid-template-columns: 8px 1fr auto; gap: 11px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--line); } .alert:last-child { border-bottom: 0; } .alert-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); margin-top: 5px; box-shadow: 0 0 0 4px rgba(245,184,93,.1); } .alert.danger .alert-mark { background: var(--red); box-shadow: 0 0 0 4px rgba(240,120,107,.1); } .alert p { font-size: .78rem; line-height: 1.35; } .alert p strong { display: block; margin-bottom: 3px; } .alert time { color: var(--muted); font-size: .68rem; }
+		.action-panel { padding: 20px; } .action-panel p { color: var(--muted); font-size: .78rem; line-height: 1.5; margin: 9px 0 17px; } .action-panel .primary { width: 100%; }
+		.modal-backdrop { display: none; position: fixed; inset: 0; z-index: 10; background: rgba(5, 11, 12, .76); align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); } .modal-backdrop.open { display: flex; }
+		.modal { width: min(100%, 460px); padding: 24px; background: #1a2527; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.45); } .modal h2 { font-size: 1.25rem; } .modal p { color: var(--muted); font-size: .8rem; line-height: 1.5; margin: 8px 0 17px; } .checks { display: grid; gap: 9px; margin-bottom: 18px; } .check { display: flex; gap: 9px; align-items: center; padding: 10px; border-radius: 6px; background: rgba(78,208,188,.06); color: var(--teal); font-size: .77rem; } .check.invalid { color: var(--red); background: rgba(240,120,107,.07); } .modal-actions { display: flex; justify-content: flex-end; gap: 9px; } .ghost { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 6px; padding: 10px 13px; font-size: .77rem; }
+		.detail-modal { width: min(100%, 590px); } .detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 20px; } .detail-header p { margin: 5px 0 0; } .detail-close { border: 0; background: transparent; color: var(--muted); font-size: 1.3rem; line-height: 1; padding: 2px 4px; } .detail-close:hover { color: var(--ink); } .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; } .detail-item { padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.025); } .detail-item.full { grid-column: 1 / -1; } .detail-item dt { color: var(--muted); font-size: .67rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; } .detail-item dd { color: var(--ink); font-size: .83rem; font-weight: 700; } .detail-item dd.subtle { color: var(--muted); font-weight: 500; } .detail-battery { display: flex; align-items: center; gap: 10px; } .detail-battery .battery-bar { flex: 1; width: auto; } .detail-section-title { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: .66rem; margin-bottom: 9px; } .event { display: flex; gap: 9px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--line); font-size: .76rem; line-height: 1.4; } .event::before { content: '•'; color: var(--teal); font-size: 1.1rem; line-height: .8; } .event.warning::before { color: var(--amber); } .event span { display: block; color: var(--muted); font-size: .68rem; margin-top: 2px; }
+		.trip-modal { width: min(100%, 650px); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; } .form-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 20px; } .form-header p { margin: 5px 0 0; } .trip-form { display: grid; gap: 16px; } .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; } .form-field { display: grid; gap: 6px; } .form-field label { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; } .form-field input { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 10px 11px; outline: 0; color: var(--ink); background: #182224; font-size: .8rem; } .form-field input:focus { border-color: var(--teal); } .wagon-config { border-top: 1px solid var(--line); padding-top: 16px; } .wagon-config-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; } .wagon-config-head h3 { font-size: .9rem; } .wagon-config-head span { color: var(--muted); font-size: .7rem; } .wagon-config-list { display: grid; gap: 8px; } .wagon-config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .form-actions { display: flex; justify-content: flex-end; gap: 9px; }
+		.devices-modal { width: min(100%, 820px); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; } .device-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; } .device-summary span { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: .72rem; } .device-summary strong { color: var(--ink); } .device-list { display: grid; gap: 7px; max-height: 480px; overflow-y: auto; padding-right: 4px; scrollbar-color: var(--teal) #263536; scrollbar-width: thin; } .device-list::-webkit-scrollbar { width: 7px; } .device-list::-webkit-scrollbar-track { background: #263536; } .device-list::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 8px; } .device-row { display: grid; grid-template-columns: 1.1fr 1.1fr .75fr .7fr 1fr; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.025); font-size: .76rem; } .device-row:hover { background: rgba(78,208,188,.07); } .device-row small { display: block; color: var(--muted); margin-bottom: 4px; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; } .device-state { color: var(--teal); font-weight: 700; } .device-battery { color: var(--ink); font-weight: 700; } .device-battery i { display: inline-block; width: 48px; height: 4px; margin-right: 6px; vertical-align: middle; background: #344141; border-radius: 5px; } .device-battery i::after { content: ''; display: block; width: var(--battery); height: 100%; background: var(--teal); border-radius: inherit; } .device-key { color: #b8d6ff; font-family: 'Space Grotesk', sans-serif; letter-spacing: .03em; }
+		.trips-modal { width: min(100%, 820px); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; } .trip-history { display: grid; gap: 9px; max-height: 500px; overflow-y: auto; padding-right: 4px; } .trip-history-empty { padding: 34px 18px; border: 1px dashed var(--line); border-radius: 7px; color: var(--muted); text-align: center; font-size: .8rem; } .trip-history-row { display: grid; grid-template-columns: 1.15fr 1.35fr .9fr .8fr auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.025); font-size: .76rem; } .trip-history-row:hover { background: rgba(78,208,188,.07); } .trip-history-row small { display: block; color: var(--muted); margin-bottom: 5px; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; } .trip-history-row strong { color: var(--ink); } .trip-status { color: var(--teal); font-weight: 700; } .trip-history-note { color: var(--muted); font-size: .72rem; margin-top: 14px; line-height: 1.5; }
+		.page-view { display: none; } .page-view.is-visible { display: block; } .page-view-panel { min-height: 620px; } .page-view-panel .trip-history { max-height: 570px; } .page-view-panel .panel-head { align-items: flex-start; } .view-kicker { color: var(--muted); font-size: .72rem; margin-top: 6px; } .view-summary { display: flex; gap: 8px; flex-wrap: wrap; } .view-summary span { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); font-size: .72rem; } .view-summary strong { color: var(--ink); }
+		.audit-list { display: grid; gap: 9px; max-height: 570px; overflow-y: auto; padding-right: 4px; } .audit-entry { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: start; padding: 15px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.025); font-size: .78rem; } .audit-entry:hover { background: rgba(78,208,188,.06); } .audit-mark { width: 9px; height: 9px; margin-top: 4px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 4px rgba(245,184,93,.1); } .audit-entry.danger .audit-mark { background: var(--red); box-shadow: 0 0 0 4px rgba(240,120,107,.1); } .audit-entry.success .audit-mark { background: var(--teal); box-shadow: 0 0 0 4px rgba(78,208,188,.1); } .audit-entry strong { display: block; margin-bottom: 4px; } .audit-entry p { color: var(--muted); line-height: 1.45; } .audit-entry time { color: var(--muted); font-size: .7rem; white-space: nowrap; } .audit-empty { padding: 34px 18px; border: 1px dashed var(--line); border-radius: 7px; color: var(--muted); text-align: center; font-size: .8rem; }
+		.audit-group { display: grid; gap: 9px; } .audit-group + .audit-group { margin-top: 12px; } .audit-group-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-left: 3px solid var(--teal); border-radius: 4px; background: rgba(78,208,188,.08); color: var(--ink); font: 600 .82rem 'Space Grotesk', sans-serif; } .audit-group-title span { color: var(--muted); font: 400 .7rem 'DM Sans', sans-serif; }
+		.toast { position: fixed; z-index: 20; right: 24px; bottom: 24px; transform: translateY(20px); opacity: 0; pointer-events: none; padding: 12px 15px; border-radius: 7px; background: #d8f8ee; color: #11332f; font-size: .78rem; font-weight: 700; transition: .25s ease; } .toast.show { transform: none; opacity: 1; }
+		@media (max-width: 1050px) { .shell { grid-template-columns: 76px 1fr; } .sidebar { padding: 24px 12px; align-items: center; } .brand { margin: 0 0 42px; } .brand-text, .nav-label, .nav-item span:not(.nav-icon), .sidebar-foot { display: none; } .nav-item { padding: 12px; } main { padding: 26px 24px 40px; } }
+		@media (max-width: 760px) { .shell { display: block; } .sidebar { height: 62px; padding: 12px 16px; flex-direction: row; justify-content: space-between; border-right: 0; border-bottom: 1px solid var(--line); } .brand { margin: 0; } nav { display: flex; } .nav-item { padding: 8px; } main { padding: 24px 14px 32px; } .topbar { display: block; } .top-actions { margin-top: 17px; justify-content: space-between; } .stats { grid-template-columns: repeat(2, 1fr); } .layout { grid-template-columns: 1fr; } }
+		@media (max-width: 520px) { .stats { gap: 8px; } .stat { padding: 13px; } .stat strong { font-size: 1.4rem; } .panel-head, .table-tools { padding-left: 14px; padding-right: 14px; } .table-tools { align-items: stretch; flex-direction: column; } .search { width: 100%; } .wagon { grid-template-columns: 1fr 1fr; padding: 14px; } .cell-label { display: block; margin-bottom: 4px; } .wagon-id { grid-column: 1 / -1; } .row-action { text-align: left; } .connection { flex: 1; text-align: center; } .route-controls { width: 100%; margin-left: 0; } .route-control { flex: 1; } .form-grid, .wagon-config-row { grid-template-columns: 1fr; } .trip-modal, .devices-modal, .trips-modal { padding: 18px; } .device-row { grid-template-columns: 1fr 1fr; gap: 10px; } .trip-history-row { grid-template-columns: 1fr 1fr; gap: 10px; } }
+	</style>
+</head>
+<body>
+	<div class="shell">
+		<aside class="sidebar">
+			<div class="brand"><span class="brand-mark">RG</span><span class="brand-text">RAILGUARD</span></div>
+			<div class="nav-label">Operación</div>
+			<nav>
+				<button class="nav-item active" id="controlBtn"><span class="nav-icon">◈</span><span>Centro de control</span></button>
+				<button class="nav-item" id="tripsBtn"><span class="nav-icon">⌁</span><span>Viajes</span></button>
+				<button class="nav-item" id="devicesBtn"><span class="nav-icon">▣</span><span>Dispositivos</span></button>
+				<button class="nav-item" id="logNavBtn"><span class="nav-icon">≡</span><span>Bitácora</span></button>
+			</nav>
+			<div class="sidebar-foot">Última sincronización<br><strong>Hoy, 10:42:18</strong><div class="user-switcher"><button class="user" id="profileButton" type="button"><span class="avatar" id="profileAvatar">AM</span><span id="profileName">Ana Méndez</span></button><div class="profile-menu" id="profileMenu"><button class="profile-option active" data-profile="ana" type="button"><span class="avatar">AM</span><span>Ana Méndez<small>Administradora</small></span></button><button class="profile-option" data-profile="jorge" type="button"><span class="avatar">JD</span><span>Jorge Del Angel<small>Consulta</small></span></button></div></div></div>
+		</aside>
+
+		<main>
+			<header class="topbar">
+				<div><div class="eyebrow">Operación en curso / TR-042</div><h1>Centro de control</h1><p class="subhead">Supervisa la integridad de tu carga ferroviaria en tiempo real.</p></div>
+				<div class="top-actions"><span class="connection">● Sistema conectado</span><button class="primary" id="newTripBtn">+ Configurar viaje</button></div>
+			</header>
+
+			<section class="stats" aria-label="Resumen del viaje">
+				<div class="stat"><div class="stat-top"><span>Vagones activos</span><span class="stat-icon">▣</span></div><strong>24 <small>/ 24</small></strong><small>100% reportando</small></div>
+				<div class="stat"><div class="stat-top"><span>Estado de compuertas</span><span class="stat-icon">⌗</span></div><strong>23 <small>cerradas</small></strong><small style="color:var(--amber)">1 requiere revisión</small></div>
+				<div class="stat"><div class="stat-top"><span>Progreso del viaje</span><span class="stat-icon">↗</span></div><strong>68%</strong><small>1,142 km restantes</small></div>
+				<div class="stat"><div class="stat-top"><span>Alertas abiertas</span><span class="stat-icon" style="color:var(--amber)">!</span></div><strong>2</strong><small style="color:var(--amber)">Atención requerida</small></div>
+			</section>
+
+			<div class="layout">
+				<section class="panel">
+					<div class="panel-head"><h2>Ruta del viaje</h2><span>Actualizado hace 12 s</span></div>
+					<div class="map" role="img" aria-label="Mapa esquemático de la ruta Monterrey a Veracruz">
+						<div class="route"></div><div class="map-node origin"><span class="node-dot"></span><strong>Monterrey</strong><span>Origen</span></div><div class="map-node current"><span class="node-dot"></span><strong>TR-042 · En ruta</strong><span>Posición actual</span></div><div class="map-node destination"><span class="node-dot"></span><strong>Veracruz</strong><span>Destino / descarga</span></div>
+						<div class="map-legend"><span class="legend-item"><i class="legend-dot"></i>Trayecto recorrido</span><span class="legend-item"><i class="legend-dot gray"></i>Trayecto pendiente</span></div>
+					</div>
+					<div class="trip-meta"><span>Salida<strong>18 ago 2026 · 06:30</strong></span><span>Producto<strong>Pellet a granel</strong></span><span>Velocidad<strong>64 km/h</strong></span><span>ETA<strong>19 ago · 22:15</strong></span><div class="route-controls" aria-label="Simular posición del tren"><button class="route-control" id="halfwayBtn" type="button">Ruta a la mitad</button><button class="route-control" id="destinationBtn" type="button">Llegó al destino</button></div></div>
+					<div class="table-tools"><div class="filters"><button class="filter active" data-filter="all">Todos · 24</button><button class="filter" data-filter="normal">Normales · 22</button><button class="filter" data-filter="attention">Atención · 2</button></div><input class="search" id="searchInput" type="search" placeholder="Buscar vagón o dispositivo"></div>
+					<div class="wagon-list" id="wagonList">
+						<div class="wagon" data-state="normal"><div class="wagon-id">VGN-1042 <small>Dispositivo RG-8831</small></div><div><span class="cell-label">Ubicación</span>Km 1,842</div><div><span class="cell-label">Estado</span><span class="status">Normal</span></div><div><span class="cell-label">Compuerta</span><span class="status">Cerrada</span></div><div class="battery"><span class="cell-label">Batería</span><i class="battery-bar"><i style="width: 86%"></i></i><strong>86%</strong></div><button class="row-action" data-wagon="VGN-1042">Ver detalle</button></div>
+						<div class="wagon" data-state="attention"><div class="wagon-id">VGN-1043 <small>Dispositivo RG-8832</small></div><div><span class="cell-label">Ubicación</span>Km 1,842</div><div><span class="cell-label">Estado</span><span class="status warn">Revisión</span></div><div><span class="cell-label">Compuerta</span><span class="status">Cerrada</span></div><div class="battery"><span class="cell-label">Batería</span><i class="battery-bar low"><i style="width: 21%"></i></i><strong>21%</strong></div><button class="row-action" data-wagon="VGN-1043">Ver detalle</button></div>
+						<div class="wagon" data-state="normal"><div class="wagon-id">VGN-1044 <small>Dispositivo RG-8833</small></div><div><span class="cell-label">Ubicación</span>Km 1,842</div><div><span class="cell-label">Estado</span><span class="status">Normal</span></div><div><span class="cell-label">Compuerta</span><span class="status">Cerrada</span></div><div class="battery"><span class="cell-label">Batería</span><i class="battery-bar"><i style="width: 91%"></i></i><strong>91%</strong></div><button class="row-action" data-wagon="VGN-1044">Ver detalle</button></div>
+						<div class="wagon" data-state="normal"><div class="wagon-id">VGN-1045 <small>Dispositivo RG-8834</small></div><div><span class="cell-label">Ubicación</span>Km 1,842</div><div><span class="cell-label">Estado</span><span class="status">Normal</span></div><div><span class="cell-label">Compuerta</span><span class="status">Cerrada</span></div><div class="battery"><span class="cell-label">Batería</span><i class="battery-bar"><i style="width: 78%"></i></i><strong>78%</strong></div><button class="row-action" data-wagon="VGN-1045">Ver detalle</button></div>
+					</div>
+				</section>
+
+				<aside class="side-stack">
+					<section class="panel"><div class="panel-head"><h2>Alertas recientes</h2><span id="alertCount">2 activas</span></div><div class="alerts" id="alertList"><div class="alert danger"><i class="alert-mark"></i><p><strong>Intento de apertura detectado</strong>VGN-1043 · compuerta inferior<span style="display:block;color:var(--muted);margin-top:4px">Sin autorización de descarga</span></p><time>10:39</time></div><div class="alert"><i class="alert-mark"></i><p><strong>Batería baja</strong>Dispositivo RG-8832<span style="display:block;color:var(--muted);margin-top:4px">Programar mantenimiento preventivo</span></p><time>10:36</time></div></div></section>
+					<section class="panel action-panel"><div class="kicker">Control seguro</div><h2 style="margin-top:7px;font-size:1.15rem">Solicitar desbloqueo</h2><p>La orden solo estará disponible dentro de la geocerca de destino y después de validar identidad, viaje y dispositivo.</p><button class="primary" id="unlockBtn">Validar condiciones</button></section>
+					<section class="panel action-panel"><div class="kicker">Auditoría</div><h2 style="margin-top:7px;font-size:1.15rem">Bitácora de eventos</h2><p>Consulta quién realizó cada acción, cuándo ocurrió y el resultado asociado al vagón.</p><button class="ghost" style="width:100%" id="logBtn">Abrir bitácora</button></section>
+				</aside>
+			</div>
+			<section class="page-view" id="tripsView" aria-labelledby="tripsViewTitle"><div class="panel page-view-panel"><div class="panel-head"><div><h2 id="tripsViewTitle">Viajes realizados</h2><p class="view-kicker">Historial de operaciones registradas después del desbloqueo general.</p></div><div class="view-summary"><span>Registros <strong id="tripViewCount">0</strong></span><span>Auditoría activa <strong>100%</strong></span></div></div><div style="padding:20px"><div class="trip-history" id="tripHistoryView"></div><p class="trip-history-note">Cada registro conserva la ruta, el producto, la cantidad de vagones y el resultado de la solicitud general.</p></div></div></section>
+			<section class="page-view" id="logView" aria-labelledby="logViewTitle"><div class="panel page-view-panel"><div class="panel-head"><div><h2 id="logViewTitle">Bitácora de eventos</h2><p class="view-kicker">Alertas y acciones registradas durante la operación ferroviaria.</p></div><div class="view-summary"><span>Eventos <strong id="logViewCount">2</strong></span><span>Registro activo <strong>100%</strong></span></div></div><div style="padding:20px"><div class="audit-list" id="auditList"></div><p class="trip-history-note">Cada evento conserva la acción detectada, el vagón o viaje relacionado, el momento y su resultado.</p></div></div></section>
+		</main>
+	</div>
+
+	<div class="modal-backdrop" id="unlockModal"><div class="modal"><h2>Validación de desbloqueo</h2><p id="unlockDescription">VGN-1043 · Descarga en Veracruz. Todas las condiciones deben ser válidas antes de enviar una orden física.</p><div class="checks"><div class="check invalid" id="locationCheck">× Ubicación: fuera de la zona autorizada</div><div class="check">✓ Viaje activo: TR-042</div><div class="check" id="deviceCheck">✓ Correspondencia: VGN-1043 / RG-8832</div><div class="check" id="authCheck">✓ Usuario verificado: Ana Méndez</div><div class="check">✓ Compuerta reportada cerrada</div></div><div class="modal-actions"><button class="ghost" id="closeModal">Cancelar</button><button class="primary" id="sendUnlockButton" disabled style="opacity:.42;cursor:not-allowed">Enviar orden de desbloqueo</button></div></div></div>
+	<div class="modal-backdrop" id="detailModal"><div class="modal detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><div class="detail-header"><div><div class="kicker">Telemetría del vagón</div><h2 id="detailTitle">VGN-1042</h2><p id="detailSubtitle">Dispositivo RG-8831 · Viaje TR-042</p></div><button class="detail-close" id="closeDetailModal" aria-label="Cerrar detalle">×</button></div><dl class="detail-grid"><div class="detail-item"><dt>Estado del dispositivo</dt><dd id="detailStatus" class="status">Normal</dd></div><div class="detail-item"><dt>Compuerta inferior</dt><dd id="detailGate" class="status">Cerrada</dd></div><div class="detail-item"><dt>Ubicación actual</dt><dd id="detailLocation">Km 1,842 · 19.4326, -99.1332</dd></div><div class="detail-item"><dt>Última comunicación</dt><dd id="detailLastSeen" class="subtle">Hace 12 segundos</dd></div><div class="detail-item"><dt>Nivel de batería</dt><dd class="detail-battery"><i class="battery-bar"><i id="detailBatteryBar"></i></i><strong id="detailBattery">86%</strong></dd></div><div class="detail-item"><dt>Viaje asociado</dt><dd id="detailTrip">TR-042 · Monterrey → Veracruz</dd></div><div class="detail-item full"><dt>Eventos recientes</dt><dd id="detailEvents"></dd></div></dl><div class="modal-actions"><button class="ghost" id="closeDetailButton">Cerrar</button><button class="primary" id="detailUnlockButton">Solicitar desbloqueo</button></div></div></div>
+	<div class="modal-backdrop" id="tripModal"><div class="modal trip-modal" role="dialog" aria-modal="true" aria-labelledby="tripTitle"><div class="form-header"><div><div class="kicker">Nueva operación</div><h2 id="tripTitle">Configurar viaje</h2><p>Asigna los vagones y dispositivos antes de iniciar el recorrido.</p></div><button class="detail-close" id="closeTripModal" aria-label="Cerrar configuración">×</button></div><form class="trip-form" id="tripForm"><div class="form-grid"><div class="form-field"><label for="tripOrigin">Origen</label><input id="tripOrigin" required value="Monterrey"></div><div class="form-field"><label for="tripDestination">Destino</label><input id="tripDestination" required value="Veracruz"></div><div class="form-field"><label for="tripProduct">Producto transportado</label><input id="tripProduct" required value="Pellet a granel"></div><div class="form-field"><label for="tripDate">Fecha de salida</label><input id="tripDate" type="date" required value="2026-08-18"></div><div class="form-field"><label for="wagonCount">Número de vagones</label><input id="wagonCount" type="number" min="1" max="60" required value="4"></div><div class="form-field"><label for="tripCode">Identificador del viaje</label><input id="tripCode" required value="TR-042"></div></div><div class="wagon-config"><div class="wagon-config-head"><h3>Asignación de dispositivos</h3><span id="wagonConfigCount">4 vagones configurados</span></div><div class="wagon-config-list" id="wagonConfigList"></div></div><div class="form-actions"><button class="ghost" type="button" id="cancelTripButton">Cancelar</button><button class="primary" type="submit">Guardar viaje</button></div></form></div></div>
+	<div class="modal-backdrop" id="devicesModal"><div class="modal devices-modal" role="dialog" aria-modal="true" aria-labelledby="devicesTitle"><div class="form-header"><div><div class="kicker">Inventario IoT</div><h2 id="devicesTitle">Dispositivos registrados</h2><p>Asignación fija de seguridad electrónica para los 28 vagones operativos.</p></div><button class="detail-close" id="closeDevicesModal" aria-label="Cerrar dispositivos">×</button></div><div class="device-summary"><span>Vagones registrados <strong>28</strong></span><span>Dispositivos activos <strong>28</strong></span><span>Identidad verificada <strong>100%</strong></span></div><div class="device-list" id="deviceList"></div><div class="form-actions" style="margin-top:16px"><button class="ghost" id="closeDevicesButton">Cerrar</button></div></div></div>
+	<div class="modal-backdrop" id="tripsModal"><div class="modal trips-modal" role="dialog" aria-modal="true" aria-labelledby="tripsTitle"><div class="form-header"><div><div class="kicker">Historial operativo</div><h2 id="tripsTitle">Viajes realizados</h2><p>Registro de viajes guardados al solicitar el desbloqueo general de sus vagones.</p></div><button class="detail-close" id="closeTripsModal" aria-label="Cerrar viajes">×</button></div><div class="trip-history" id="tripHistory"></div><p class="trip-history-note">Cada registro conserva la ruta y el resultado de la solicitud general para fines de seguimiento y auditoría.</p><div class="form-actions" style="margin-top:16px"><button class="ghost" id="closeTripsButton">Cerrar</button></div></div></div>
+	<div class="toast" id="toast">La bitácora estará disponible en la siguiente versión.</div>
+
+	<script>
+		const modal = document.getElementById('unlockModal');
+		const detailModal = document.getElementById('detailModal');
+		const tripModal = document.getElementById('tripModal');
+		const devicesModal = document.getElementById('devicesModal');
+		const tripsModal = document.getElementById('tripsModal');
+		const toast = document.getElementById('toast');
+		const tripHistory = [];
+		const auditHistory = [
+			{ tripCode: 'TR-042', type: 'danger', title: 'Intento de apertura detectado', detail: 'VGN-1043 · Compuerta inferior · Sin autorización de descarga', time: '10:39' },
+			{ tripCode: 'TR-042', type: 'warning', title: 'Batería baja', detail: 'Dispositivo RG-8832 · Programar mantenimiento preventivo', time: '10:36' }
+		];
+		let currentAlerts = [
+			{ type: 'danger', title: 'Intento de apertura detectado', detail: 'VGN-1043 · compuerta inferior', note: 'Sin autorización de descarga', time: '10:39' },
+			{ type: 'warning', title: 'Batería baja', detail: 'Dispositivo RG-8832', note: 'Programar mantenimiento preventivo', time: '10:36' }
+		];
+		const alertScenarios = [
+			{ type: 'danger', title: 'Intento de apertura detectado', detail: 'compuerta inferior', note: 'Sin autorización de descarga' },
+			{ type: 'warning', title: 'Batería baja', detail: 'Programar mantenimiento preventivo', note: 'Revisar dispositivo en próxima parada' },
+			{ type: 'danger', title: 'Posible manipulación detectada', detail: 'sensor de seguridad', note: 'Inspección remota requerida' },
+			{ type: 'warning', title: 'Dispositivo sin comunicación', detail: 'telemetría interrumpida', note: 'Último reporte hace 4 minutos' },
+			{ type: 'warning', title: 'Vagón fuera de ruta esperada', detail: 'geocerca de recorrido', note: 'Verificar posición del tren' }
+		];
+		let currentProfile = { id: 'ana', name: 'Ana Méndez', initials: 'AM', canUnlock: true };
+		const wagonDetails = {
+			'VGN-1042': { device: 'RG-8831', status: 'Normal', gate: 'Cerrada', location: 'Km 1,842 · 19.4326, -99.1332', lastSeen: 'Hace 12 segundos', battery: 86, events: [['Comunicación recibida correctamente', '10:42:18']] },
+			'VGN-1043': { device: 'RG-8832', status: 'Revisión', gate: 'Cerrada', location: 'Km 1,842 · 19.4326, -99.1332', lastSeen: 'Hace 12 segundos', battery: 21, events: [['Intento de apertura detectado sin autorización', '10:39:04', true], ['Batería por debajo del umbral preventivo', '10:36:22', true]] },
+			'VGN-1044': { device: 'RG-8833', status: 'Normal', gate: 'Cerrada', location: 'Km 1,842 · 19.4326, -99.1332', lastSeen: 'Hace 12 segundos', battery: 91, events: [['Comunicación recibida correctamente', '10:42:16']] },
+			'VGN-1045': { device: 'RG-8834', status: 'Normal', gate: 'Cerrada', location: 'Km 1,842 · 19.4326, -99.1332', lastSeen: 'Hace 12 segundos', battery: 78, events: [['Comunicación recibida correctamente', '10:42:12']] }
+		};
+		const route = document.querySelector('.route');
+		const currentNode = document.querySelector('.map-node.current');
+		const currentNodeLabel = currentNode.querySelector('strong');
+		const currentNodeDescription = currentNode.querySelector('span:last-child');
+		const progressStat = document.querySelector('.stat:nth-child(3) strong');
+		const remainingDistance = document.querySelector('.stat:nth-child(3) small');
+		let destinationReached = false;
+		let selectedUnlockWagon = 'VGN-1043';
+		document.getElementById('halfwayBtn').addEventListener('click', () => updateRoutePosition('halfway'));
+		document.getElementById('destinationBtn').addEventListener('click', () => updateRoutePosition('destination'));
+		function updateRoutePosition(position) {
+			const isDestination = position === 'destination';
+			route.style.background = isDestination ? 'var(--teal)' : 'linear-gradient(90deg, var(--teal), var(--teal) 50%, rgba(145,160,156,.28) 50%)';
+			currentNode.style.left = isDestination ? '83%' : '48%';
+			currentNode.style.top = isDestination ? '21%' : '43%';
+			currentNodeLabel.textContent = isDestination ? 'TR-042 · En destino' : 'TR-042 · Mitad de ruta';
+			currentNodeDescription.textContent = isDestination ? 'Zona autorizada de descarga' : 'Posición actual';
+			progressStat.innerHTML = isDestination ? '100%' : '50%';
+			remainingDistance.textContent = isDestination ? 'Destino alcanzado' : '571 km restantes';
+			destinationReached = isDestination;
+			updateUnlockValidation();
+			document.querySelectorAll('.route-control').forEach((button) => button.classList.remove('active'));
+			document.getElementById(isDestination ? 'destinationBtn' : 'halfwayBtn').classList.add('active');
+		}
+		document.getElementById('unlockBtn').addEventListener('click', () => openUnlock());
+		document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
+		document.getElementById('sendUnlockButton').addEventListener('click', () => {
+			if (!currentProfile.canUnlock) {
+				modal.classList.remove('open');
+				showToast('Jorge Del Angel no tiene permiso para desbloquear vagones.');
+				return;
+			}
+			if (selectedUnlockWagon) {
+				wagonDetails[selectedUnlockWagon].gate = 'Desbloqueo solicitado';
+			} else {
+				Object.values(wagonDetails).forEach((wagon) => { wagon.gate = 'Desbloqueo solicitado'; });
+				archiveCurrentTrip();
+			}
+			modal.classList.remove('open');
+			showToast(selectedUnlockWagon ? `Orden de desbloqueo enviada para ${selectedUnlockWagon}.` : 'Orden de desbloqueo enviada para todos los vagones.');
+		});
+		document.getElementById('newTripBtn').addEventListener('click', () => { tripModal.classList.add('open'); renderWagonConfig(); });
+		document.getElementById('closeTripModal').addEventListener('click', () => tripModal.classList.remove('open'));
+		document.getElementById('cancelTripButton').addEventListener('click', () => tripModal.classList.remove('open'));
+		document.getElementById('wagonCount').addEventListener('input', renderWagonConfig);
+		document.getElementById('tripForm').addEventListener('submit', (event) => { event.preventDefault(); saveTrip(); });
+		document.getElementById('devicesBtn').addEventListener('click', () => { renderDeviceRegistry(); devicesModal.classList.add('open'); });
+		document.getElementById('closeDevicesModal').addEventListener('click', () => devicesModal.classList.remove('open'));
+		document.getElementById('closeDevicesButton').addEventListener('click', () => devicesModal.classList.remove('open'));
+		document.getElementById('controlBtn').addEventListener('click', () => showControlView());
+		document.getElementById('tripsBtn').addEventListener('click', () => showTripsView());
+		document.getElementById('logNavBtn').addEventListener('click', () => showLogView());
+		document.getElementById('closeTripsModal').addEventListener('click', () => tripsModal.classList.remove('open'));
+		document.getElementById('closeTripsButton').addEventListener('click', () => tripsModal.classList.remove('open'));
+		document.getElementById('logBtn').addEventListener('click', () => showLogView());
+		document.getElementById('profileButton').addEventListener('click', (event) => { event.stopPropagation(); document.getElementById('profileMenu').classList.toggle('open'); });
+		document.querySelectorAll('.profile-option').forEach((option) => option.addEventListener('click', () => selectProfile(option.dataset.profile)));
+		document.addEventListener('click', (event) => { if (!event.target.closest('.user-switcher')) document.getElementById('profileMenu').classList.remove('open'); });
+		modal.addEventListener('click', (event) => { if (event.target === modal) modal.classList.remove('open'); });
+		document.querySelectorAll('.filter').forEach((button) => button.addEventListener('click', () => {
+			document.querySelectorAll('.filter').forEach((item) => item.classList.remove('active')); button.classList.add('active');
+			const filter = button.dataset.filter; document.querySelectorAll('.wagon').forEach((wagon) => { wagon.hidden = filter !== 'all' && wagon.dataset.state !== filter; });
+		}));
+		document.getElementById('searchInput').addEventListener('input', (event) => { const term = event.target.value.toLowerCase(); document.querySelectorAll('.wagon').forEach((wagon) => { wagon.hidden = !wagon.textContent.toLowerCase().includes(term); }); });
+		document.getElementById('wagonList').addEventListener('click', (event) => { const button = event.target.closest('.row-action'); if (button) openDetail(button.dataset.wagon); });
+		document.getElementById('closeDetailModal').addEventListener('click', () => detailModal.classList.remove('open'));
+		document.getElementById('closeDetailButton').addEventListener('click', () => detailModal.classList.remove('open'));
+		document.getElementById('detailUnlockButton').addEventListener('click', () => { detailModal.classList.remove('open'); openUnlock(document.getElementById('detailTitle').textContent); });
+		detailModal.addEventListener('click', (event) => { if (event.target === detailModal) detailModal.classList.remove('open'); });
+		document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { detailModal.classList.remove('open'); modal.classList.remove('open'); tripModal.classList.remove('open'); devicesModal.classList.remove('open'); tripsModal.classList.remove('open'); } });
+		function selectProfile(profileId) {
+			currentProfile = profileId === 'jorge' ? { id: 'jorge', name: 'Jorge Del Angel', initials: 'JD', canUnlock: false } : { id: 'ana', name: 'Ana Méndez', initials: 'AM', canUnlock: true };
+			document.getElementById('profileName').textContent = currentProfile.name;
+			document.getElementById('profileAvatar').textContent = currentProfile.initials;
+			document.querySelectorAll('.profile-option').forEach((option) => option.classList.toggle('active', option.dataset.profile === profileId));
+			document.getElementById('profileMenu').classList.remove('open');
+			if (modal.classList.contains('open')) {
+				document.getElementById('authCheck').textContent = `✓ Usuario verificado: ${currentProfile.name}`;
+				document.getElementById('authCheck').className = currentProfile.canUnlock ? 'check' : 'check invalid';
+				updateUnlockValidation();
+			}
+			showToast(`Perfil activo: ${currentProfile.name}.`);
+		}
+		function openDetail(wagonId) {
+			const detail = wagonDetails[wagonId];
+			document.getElementById('detailTitle').textContent = wagonId;
+			document.getElementById('detailSubtitle').textContent = `Dispositivo ${detail.device} · Viaje TR-042`;
+			document.getElementById('detailStatus').textContent = detail.status;
+			document.getElementById('detailStatus').className = `status${detail.status === 'Revisión' ? ' warn' : ''}`;
+			document.getElementById('detailGate').textContent = detail.gate;
+			document.getElementById('detailLocation').textContent = detail.location;
+			document.getElementById('detailLastSeen').textContent = detail.lastSeen;
+			document.getElementById('detailBattery').textContent = `${detail.battery}%`;
+			document.getElementById('detailBatteryBar').style.width = `${detail.battery}%`;
+			document.getElementById('detailBatteryBar').style.background = detail.battery <= 25 ? 'var(--amber)' : 'var(--teal)';
+			document.getElementById('detailEvents').innerHTML = detail.events.map(([message, time, warning]) => `<div class="event${warning ? ' warning' : ''}">${message}<span>${time} · Registro automático</span></div>`).join('');
+		detailModal.classList.add('open');
+		}
+		function openUnlock(wagonId) {
+			selectedUnlockWagon = wagonId;
+			if (wagonId) {
+				const detail = wagonDetails[wagonId];
+				document.getElementById('unlockDescription').textContent = `${wagonId} · Descarga en Veracruz. Todas las condiciones deben ser válidas antes de enviar una orden física.`;
+				document.getElementById('deviceCheck').textContent = `✓ Correspondencia: ${wagonId} / ${detail.device}`;
+			} else {
+				document.getElementById('unlockDescription').textContent = 'Todos los vagones del viaje TR-042 · Descarga en Veracruz. La orden se enviará al conjunto completo de dispositivos.';
+				document.getElementById('deviceCheck').textContent = `✓ Correspondencia: todos los vagones del viaje (${document.querySelectorAll('.wagon').length})`;
+			}
+			document.getElementById('authCheck').textContent = `✓ Usuario verificado: ${currentProfile.name}`;
+			document.getElementById('authCheck').className = currentProfile.canUnlock ? 'check' : 'check invalid';
+			updateUnlockValidation();
+			modal.classList.add('open');
+		}
+		function updateUnlockValidation() {
+			const locationCheck = document.getElementById('locationCheck');
+			const sendButton = document.getElementById('sendUnlockButton');
+			locationCheck.className = `check${destinationReached ? '' : ' invalid'}`;
+			locationCheck.textContent = destinationReached ? '✓ Ubicación: dentro de la zona autorizada' : '× Ubicación: fuera de la zona autorizada';
+			sendButton.disabled = !destinationReached || !currentProfile.canUnlock;
+			sendButton.style.opacity = destinationReached && currentProfile.canUnlock ? '1' : '.42';
+			sendButton.style.cursor = destinationReached && currentProfile.canUnlock ? 'pointer' : 'not-allowed';
+		}
+		function renderWagonConfig() {
+			const countInput = document.getElementById('wagonCount');
+			const count = Math.max(1, Math.min(60, Number.parseInt(countInput.value, 10) || 1));
+			countInput.value = count;
+			document.getElementById('wagonConfigCount').textContent = `${count} vagón${count === 1 ? '' : 'es'} configurado${count === 1 ? '' : 's'}`;
+			document.getElementById('wagonConfigList').innerHTML = Array.from({ length: count }, (_, index) => { const number = 1042 + index; return `<div class="wagon-config-row"><div class="form-field"><label for="wagon-${index}">Vagón ${index + 1}</label><input id="wagon-${index}" name="wagon-${index}" required value="VGN-${number}"></div><div class="form-field"><label for="device-${index}">Dispositivo</label><input id="device-${index}" name="device-${index}" required value="RG-${8831 + index}"></div></div>`; }).join('');
+		}
+		function renderDeviceRegistry() {
+			const deviceList = document.getElementById('deviceList');
+			deviceList.innerHTML = Array.from({ length: 28 }, (_, index) => {
+				const wagonNumber = 1042 + index;
+				const deviceNumber = 8831 + index;
+				const battery = 98 - (index % 8) * 4;
+				return `<div class="device-row"><div><small>Vagón</small><strong>VGN-${wagonNumber}</strong></div><div><small>Dispositivo</small><strong class="device-key">RG-${deviceNumber}</strong></div><div><small>Estado</small><span class="device-state">Activo</span></div><div><small>Batería</small><span class="device-battery"><i style="--battery: ${battery}%"></i>${battery}%</span></div><div><small>Última comunicación</small><span>Hoy, 10:${String(42 - (index % 10)).padStart(2, '0')}:18</span></div></div>`;
+			}).join('');
+		}
+		function archiveCurrentTrip() {
+			const tripCode = document.getElementById('tripCode').value.trim();
+			const origin = document.querySelector('.map-node.origin strong').textContent;
+			const destination = document.querySelector('.map-node.destination strong').textContent;
+			const product = document.querySelector('.trip-meta').children[1].querySelector('strong').textContent;
+			const departureDate = document.getElementById('tripDate').value;
+			const wagonCount = document.querySelectorAll('.wagon').length;
+			tripHistory.unshift({ tripCode, origin, destination, product, departureDate, wagonCount, result: 'Desbloqueo general solicitado', registeredAt: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) });
+			auditHistory.unshift({ tripCode, type: 'success', title: 'Desbloqueo general solicitado', detail: `${wagonCount} vagones · ${origin} → ${destination} · Usuario: ${currentProfile.name}`, time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) });
+		}
+		function renderTripHistory() {
+			const histories = [document.getElementById('tripHistory'), document.getElementById('tripHistoryView')];
+			if (!tripHistory.length) {
+				histories.forEach((history) => { history.innerHTML = '<div class="trip-history-empty">Todavía no hay viajes registrados. El viaje aparecerá aquí después de solicitar el desbloqueo general.</div>'; });
+				document.getElementById('tripViewCount').textContent = '0';
+				return;
+			}
+			const historyMarkup = tripHistory.map((trip) => `<div class="trip-history-row"><div><small>Viaje</small><strong>${trip.tripCode}</strong></div><div><small>Ruta</small><strong>${trip.origin} → ${trip.destination}</strong></div><div><small>Producto</small><strong>${trip.product}</strong></div><div><small>Vagones</small><strong>${trip.wagonCount}</strong></div><div><small>Resultado · ${trip.registeredAt}</small><span class="trip-status">${trip.result}</span></div></div>`).join('');
+			histories.forEach((history) => { history.innerHTML = historyMarkup; });
+			document.getElementById('tripViewCount').textContent = tripHistory.length;
+		}
+		function showTripsView() {
+			document.querySelector('.stats').style.display = 'none';
+			document.querySelector('.layout').style.display = 'none';
+			document.getElementById('tripsView').classList.add('is-visible');
+			document.getElementById('logView').classList.remove('is-visible');
+			document.querySelector('main h1').textContent = 'Viajes realizados';
+			document.querySelector('.subhead').textContent = 'Consulta el historial de operaciones y solicitudes de desbloqueo general.';
+			document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active'));
+			document.getElementById('tripsBtn').classList.add('active');
+			renderTripHistory();
+		}
+		function showControlView() {
+			document.querySelector('.stats').style.display = '';
+			document.querySelector('.layout').style.display = '';
+			document.getElementById('tripsView').classList.remove('is-visible');
+			document.getElementById('logView').classList.remove('is-visible');
+			document.querySelector('main h1').textContent = 'Centro de control';
+			document.querySelector('.subhead').textContent = 'Supervisa la integridad de tu carga ferroviaria en tiempo real.';
+			document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active'));
+			document.getElementById('controlBtn').classList.add('active');
+		}
+		function showLogView() {
+			document.querySelector('.stats').style.display = 'none';
+			document.querySelector('.layout').style.display = 'none';
+			document.getElementById('tripsView').classList.remove('is-visible');
+			document.getElementById('logView').classList.add('is-visible');
+			document.querySelector('main h1').textContent = 'Bitácora de eventos';
+			document.querySelector('.subhead').textContent = 'Consulta alertas, acciones y resultados registrados durante la operación.';
+			document.querySelectorAll('.nav-item').forEach((item) => item.classList.remove('active'));
+			document.getElementById('logNavBtn').classList.add('active');
+			renderAuditHistory();
+		}
+		function renderAuditHistory() {
+			const list = document.getElementById('auditList');
+			if (!auditHistory.length) {
+				list.innerHTML = '<div class="audit-empty">Todavía no hay eventos registrados.</div>';
+				document.getElementById('logViewCount').textContent = '0';
+				return;
+			}
+			const grouped = auditHistory.reduce((groups, entry) => { (groups[entry.tripCode] ||= []).push(entry); return groups; }, {});
+			list.innerHTML = Object.entries(grouped).map(([tripCode, entries]) => `<section class="audit-group"><div class="audit-group-title"><span>Viaje</span><strong>${tripCode}</strong><span>${entries.length} evento${entries.length === 1 ? '' : 's'}</span></div>${entries.map((entry) => `<article class="audit-entry ${entry.type}"><i class="audit-mark"></i><div><strong>${entry.title}</strong><p>${entry.detail}</p></div><time>${entry.time}</time></article>`).join('')}</section>`).join('');
+			document.getElementById('logViewCount').textContent = auditHistory.length;
+		}
+		function saveTrip() {
+			const tripCode = document.getElementById('tripCode').value.trim();
+			const origin = document.getElementById('tripOrigin').value.trim();
+			const destination = document.getElementById('tripDestination').value.trim();
+			const product = document.getElementById('tripProduct').value.trim();
+			const count = document.getElementById('wagonCount').value;
+			document.querySelector('.eyebrow').textContent = `Operación en curso / ${tripCode}`;
+			document.querySelector('.trip-meta').children[1].querySelector('strong').textContent = product;
+			document.querySelector('.map-node.origin strong').textContent = origin;
+			document.querySelector('.map-node.destination strong').textContent = destination;
+			document.querySelector('.map-node.current strong').textContent = `${tripCode} · En ruta`;
+			renderWagonRows(Number.parseInt(count, 10));
+			updateDashboardCounts(Number.parseInt(count, 10));
+			generateRandomAlerts(Number.parseInt(count, 10));
+			tripModal.classList.remove('open');
+			showToast(`Viaje ${tripCode} guardado: ${origin} → ${destination}.`);
+		}
+		function generateRandomAlerts(wagonCount) {
+			const alertCount = Math.floor(Math.random() * 3) + 1;
+			const selected = [...alertScenarios].sort(() => Math.random() - 0.5).slice(0, alertCount);
+			currentAlerts = selected.map((scenario, index) => {
+				const wagonNumber = 1042 + Math.floor(Math.random() * Math.max(1, wagonCount));
+				const deviceNumber = 8831 + (wagonNumber - 1042);
+				const minutes = String(10 + index).padStart(2, '0');
+				return { ...scenario, detail: `VGN-${wagonNumber} · ${scenario.detail}`, note: scenario.note, time: `10:${minutes}`, device: `RG-${deviceNumber}` };
+			});
+			renderAlerts();
+		}
+		function renderAlerts() {
+			document.getElementById('alertCount').textContent = `${currentAlerts.length} activa${currentAlerts.length === 1 ? '' : 's'}`;
+			document.querySelector('.stat:nth-child(4) strong').textContent = currentAlerts.length;
+			document.querySelector('.stat:nth-child(4) small').textContent = currentAlerts.length ? 'Atención requerida' : 'Sin alertas abiertas';
+			document.getElementById('alertList').innerHTML = currentAlerts.map((alert) => `<div class="alert ${alert.type}"><i class="alert-mark"></i><p><strong>${alert.title}</strong>${alert.detail}<span style="display:block;color:var(--muted);margin-top:4px">${alert.note}</span></p><time>${alert.time}</time></div>`).join('');
+		}
+		function updateDashboardCounts(wagonCount) {
+			const reviewCount = wagonCount > 0 ? 1 : 0;
+			const closedCount = Math.max(0, wagonCount - reviewCount);
+			document.querySelector('.stat:first-child strong').innerHTML = `${wagonCount} <small>/ ${wagonCount}</small>`;
+			document.querySelector('.stat:nth-child(2) strong').innerHTML = `${closedCount} <small>cerradas</small>`;
+			document.querySelector('.stat:nth-child(2) > small').textContent = `${reviewCount} requiere revisión`;
+			updateFilterCounts(wagonCount, closedCount, reviewCount);
+		}
+		function updateFilterCounts(totalCount, normalCount, attentionCount) {
+			document.querySelector('[data-filter="all"]').textContent = `Todos · ${totalCount}`;
+			document.querySelector('[data-filter="normal"]').textContent = `Normales · ${normalCount}`;
+			document.querySelector('[data-filter="attention"]').textContent = `Atención · ${attentionCount}`;
+		}
+		function renderWagonRows(wagonCount) {
+			const wagonList = document.getElementById('wagonList');
+			wagonList.innerHTML = Array.from({ length: wagonCount }, (_, index) => {
+				const number = 1042 + index;
+				const wagonId = `VGN-${number}`;
+				const device = `RG-${8831 + index}`;
+				const isAttention = index === 1;
+				const battery = [86, 21, 91, 78][index] || 80 - (index % 4) * 3;
+				if (!wagonDetails[wagonId]) wagonDetails[wagonId] = { device, status: isAttention ? 'Revisión' : 'Normal', gate: 'Cerrada', location: 'Km 1,842 · 19.4326, -99.1332', lastSeen: 'Hace 12 segundos', battery, events: isAttention ? [['Batería por debajo del umbral preventivo', '10:36:22', true]] : [['Comunicación recibida correctamente', '10:42:10']] };
+				return `<div class="wagon" data-state="${isAttention ? 'attention' : 'normal'}"><div class="wagon-id">${wagonId} <small>Dispositivo ${device}</small></div><div><span class="cell-label">Ubicación</span>Km 1,842</div><div><span class="cell-label">Estado</span><span class="status${isAttention ? ' warn' : ''}">${isAttention ? 'Revisión' : 'Normal'}</span></div><div><span class="cell-label">Compuerta</span><span class="status">Cerrada</span></div><div class="battery${battery <= 25 ? ' low' : ''}"><span class="cell-label">Batería</span><i class="battery-bar"><i style="width: ${battery}%"></i></i><strong>${battery}%</strong></div><button class="row-action" data-wagon="${wagonId}">Ver detalle</button></div>`;
+			}).join('');
+		}
+		updateDashboardCounts(document.querySelectorAll('.wagon').length);
+		function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2800); }
+	</script>
+</body>
+</html>
